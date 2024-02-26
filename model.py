@@ -1,38 +1,50 @@
-from keras.layers import Input, Conv2D, Conv3D, MaxPooling2D, MaxPooling3D, Flatten, Concatenate, Dense
 from keras.models import Model
+from keras.layers import Input, ConvLSTM2D, Conv2D, MaxPooling3D, MaxPooling2D, Flatten, Dense, Concatenate,GlobalAveragePooling2D,BatchNormalization,TimeDistributed
+from keras.utils import plot_model
 
-def create_multi_input_model():
-    # Define input shapes
-    image_input_shape = (15, 128, 128, 3)
-    audio_input_shape = (20, 47, 1)
+# Define input shapes
+height,width,channels=320,320,3
+height_spectrogram, width_spectrogram, channels_spectrogram=600,1000,3
+input_shape_tensor = (10, height, width, channels)  # Assuming height, width, and channels are placeholders
+input_shape_spectrogram = (height_spectrogram, width_spectrogram, channels_spectrogram)  # Placeholder values
 
-    # Image input and layers
-    image_input = Input(shape=image_input_shape)
-    conv3d_1 = Conv3D(32, kernel_size=(3, 3, 3), activation='relu')(image_input)
-    maxpool3d_1 = MaxPooling3D(pool_size=(2, 2, 2))(conv3d_1)
-    conv3d_2 = Conv3D(64, kernel_size=(3, 3, 3), activation='relu')(maxpool3d_1)
-    maxpool3d_2 = MaxPooling3D(pool_size=(2, 2, 2))(conv3d_2)
-    conv3d_3 = Conv3D(128, kernel_size=(2, 2, 2), activation='relu')(maxpool3d_2)
-    maxpool3d_3 = MaxPooling3D(pool_size=(1, 1, 1))(conv3d_3)
-    conv3d_4 = Conv3D(256, kernel_size=(1, 1, 1), activation='relu')(maxpool3d_3)
-    maxpool3d_4 = MaxPooling3D(pool_size=(1, 1, 1))(conv3d_4)
-    flat_image = Flatten()(maxpool3d_4)
+# Define input layers
+input_tensor = Input(shape=input_shape_tensor, name='input_tensor')
+input_spectrogram = Input(shape=input_shape_spectrogram, name='input_spectrogram')
 
-    # Audio input and layers
-    audio_input = Input(shape=audio_input_shape)
-    conv2d_aud1 = Conv2D(128, kernel_size=(3, 3), activation='relu')(audio_input)
-    maxpool2d_aud1 = MaxPooling2D(pool_size=(2, 2))(conv2d_aud1)
-    conv2d_aud2 = Conv2D(64, kernel_size=(3, 3), activation='relu')(maxpool2d_aud1)
-    maxpool2d_aud2 = MaxPooling2D(pool_size=(2, 2))(conv2d_aud2)
-    conv2d_aud3 = Conv2D(32, kernel_size=(3, 3), activation='relu')(maxpool2d_aud2)
-    maxpool2d_aud3 = MaxPooling2D(pool_size=(1, 1))(conv2d_aud3)
-    flat_audio = Flatten()(maxpool2d_aud3)
+# First branch: ConvLSTM2D for the 5D tensor
+x1 = ConvLSTM2D(32, kernel_size=(5, 5), padding='same', activation='relu',return_sequences=True)(input_tensor)
+x1 = BatchNormalization()(x1)
+x1 = MaxPooling3D(pool_size=(1, 3, 3), padding='same')(x1)
+x1 = ConvLSTM2D(32, kernel_size=(5, 5), padding='same', activation='relu',return_sequences=True)(input_tensor)
+x1 = BatchNormalization()(x1)
+x1 = MaxPooling3D(pool_size=(1, 3, 3), padding='same')(x1)
+x1 = ConvLSTM2D(16, kernel_size=(3, 3), activation='relu',padding='same')(x1)
+#x1 = MaxPooling2D(pool_size=(3, 3), padding='same')(x1)
+#x1 = GlobalAveragePooling2D()(x1)  # Add GlobalAveragePooling2D to reduce spatial dimensions
 
-    # Concatenate features and create output layer
-    concatenated_features = Concatenate()([flat_image, flat_audio])
-    output = Dense(2, activation='softmax')(concatenated_features)
+# Second branch: Convolution for the spectrogram image
+x2 = Conv2D(64, kernel_size=(3, 3), activation='relu')(input_spectrogram)
+x2 = MaxPooling2D(pool_size=(5, 5))(x2)
+x2 = Conv2D(32, kernel_size=(3, 3), activation='relu')(x2)
+x2 = MaxPooling2D(pool_size=(3, 3))(x2)
+x2 = Conv2D(16, kernel_size=(3, 3), activation='relu')(x2)
+#x2 = MaxPooling2D(pool_size=(3, 3))(x2)
+#x2 = GlobalAveragePooling2D()(x2)  # Add GlobalAveragePooling2D to reduce spatial dimensions
 
-    # Create and return the model
-    model = Model(inputs=[image_input, audio_input], outputs=output)
-    return model
 
+flat_image = Flatten()(x1)
+flat_audio = Flatten()(x2)
+
+# Final layers for prediction
+concatenated_features = Concatenate()([flat_image, flat_audio])
+x = Dense(128, activation='relu')(concatenated_features)
+output = Dense(2, activation='softmax', name='output')(x)
+
+# Create the model
+model = Model(inputs=[input_tensor, input_spectrogram], outputs=output)
+
+# Display the model summary
+model.summary()
+# Save the model plot to a file
+plot_model(model, to_file='model_plot.png', show_shapes=True, show_layer_names=True)
