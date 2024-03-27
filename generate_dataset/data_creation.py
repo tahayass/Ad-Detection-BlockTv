@@ -17,20 +17,22 @@ def parse_arguments():
     parser.add_argument("--output_folder", type=str,
                         help="Output folder for dataset.")
 
+    parser.add_argument("--chunk_duration", type=int, default=2,
+                        help="Duration of each chunk in seconds.")
+
+    parser.add_argument("--videos_per_batch", type=int, default=10,
+                        help="Number of videos per batch.")
+
     args = parser.parse_args()
     return args
 
-def process_videos(videos_folder, output_folder):
+def process_videos(videos_folder, output_folder, chunk_duration, videos_per_batch):
     output_folder_ad = os.path.join(output_folder, 'ad')
     output_folder_no_ad = os.path.join(output_folder, 'no_ad')
 
     os.makedirs(output_folder, exist_ok=True)
     os.makedirs(output_folder_ad, exist_ok=True)
     os.makedirs(output_folder_no_ad, exist_ok=True)
-
-    # Set chunk duration in seconds
-    chunk_duration = 2
-    videos_per_batch = 10
 
     # Initialize batch counters
     batch_counter_ad = 0
@@ -107,13 +109,13 @@ def process_videos(videos_folder, output_folder):
             cap.release()
             # Remove the audio file after processing
             os.remove(audio_output_path)
-
+            
 def main():
     # Parse command line arguments
     args = parse_arguments()
 
     # Process videos
-    process_videos(args.videos_folder, args.output_folder)
+    process_videos(args.videos_folder, args.output_folder, args.chunk_duration, args.videos_per_batch)
 
 if __name__ == "__main__":
     main()
