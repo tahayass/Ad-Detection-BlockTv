@@ -5,13 +5,13 @@ from sklearn.model_selection import train_test_split
 from keras.optimizers import Adam
 from keras.metrics import Recall, Accuracy
 
-import os
+import glob
 
 from data_loader import load_data, custom_data_generator
 from model import create_model
 
 def train_model(dataset_path, batch_size, epochs, save_model_path):
-    class_folders = [os.path.join(dataset_path,dir) for dir in os.listdir(dataset_path)]
+    class_folders = class_folders = glob.glob(dataset_path+'/*/*')
     video_data, spectrogram_data = load_data(class_folders)
 
     train_video_keys, val_video_keys = train_test_split(list(video_data.keys()), test_size=0.2, random_state=42)
@@ -62,12 +62,12 @@ def plot_training_history(history):
 if __name__ == "__main__":
     # Argument parsing
     parser = argparse.ArgumentParser(description='Train a video classification model.')
-    parser.add_argument('--class_folders', nargs='+', help='List of class folders for data loading.')
+    parser.add_argument('--dataset_path', help='List of class folders for data loading.')
     parser.add_argument('--batch_size', type=int, default=1, help='Batch size for training.')
     parser.add_argument('--epochs', type=int, default=1, help='Number of training epochs.')
     parser.add_argument('--save_model_path', default='trained_model.h5', help='Path to save the trained model.')
 
     args = parser.parse_args()
 
-    train_model(args.class_folders, args.batch_size, args.epochs, args.save_model_path)
+    train_model(args.dataset_path, args.batch_size, args.epochs, args.save_model_path)
 
