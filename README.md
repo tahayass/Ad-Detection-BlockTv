@@ -9,8 +9,6 @@ This project focuses on developing a robust model for detecting commercials with
 - [Model Training](#model-training)
   - [Overview](#overview-1)
   - [Usage](#usage-1)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Dataset Generation
 
