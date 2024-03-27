@@ -43,7 +43,7 @@ In the above command:
 
 Make sure to replace `segmented_videos` and `dataset_folder` with the appropriate paths in your system.
 
-## Dataset Generation
+  ## Model Training
 
 ### Overview
 
