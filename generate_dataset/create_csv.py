@@ -57,7 +57,7 @@ if __name__ == "__main__":
     total_duration = (24 * 60 + 48) * 60  # 24 hours and 48 minutes in seconds
     segment_duration = 20 * 60  # 20 minutes in seconds
     csv_filename = 'video_segments.csv'
-    txt_path='adds-timestamps_test.txt'
+    txt_path=r'generate_dataset\adds-timestamps_test.txt'
 
     segments = parse_segments_from_txt(txt_path)
     write_csv(segments, csv_filename)
